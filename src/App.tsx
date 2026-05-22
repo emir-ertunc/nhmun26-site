@@ -4,7 +4,9 @@ import {
   ChevronDown,
   Clock3,
   Compass,
+  Gauge,
   Landmark,
+  Languages,
   MapPin,
   Menu,
   ScrollText,
@@ -13,10 +15,13 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { nhmunImages } from './assets/nhmun'
-import { ButtonLink } from './components/Button'
+import { Button, ButtonLink } from './components/Button'
 import { DecorativeFrame } from './components/DecorativeFrame'
+import { Modal } from './components/Modal'
 import { ParchmentCard } from './components/ParchmentCard'
 import { Section } from './components/Section'
+import type { Committee, CommitteeCategory } from './data/committees'
+import { committeeFilters, committees } from './data/committees'
 import {
   aboutHighlights,
   aboutPillars,
@@ -372,6 +377,179 @@ function AboutSection() {
   )
 }
 
+function CommitteeDetail({ committee }: { committee: Committee }) {
+  return (
+    <div className="grid gap-6">
+      <p className="text-lg leading-8 text-ink/74">{committee.description}</p>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-lg border border-burgundy/15 bg-parchment/45 p-4">
+          <div className="flex items-center gap-2 text-burgundy">
+            <Gauge aria-hidden size={18} />
+            <p className="text-xs font-extrabold uppercase tracking-[0.18em]">
+              Difficulty
+            </p>
+          </div>
+          <p className="mt-2 font-serif text-2xl font-bold text-burgundy-dark">
+            {committee.difficulty}
+          </p>
+        </div>
+        <div className="rounded-lg border border-burgundy/15 bg-parchment/45 p-4">
+          <div className="flex items-center gap-2 text-burgundy">
+            <UsersRound aria-hidden size={18} />
+            <p className="text-xs font-extrabold uppercase tracking-[0.18em]">
+              Capacity
+            </p>
+          </div>
+          <p className="mt-2 font-serif text-2xl font-bold text-burgundy-dark">
+            {committee.capacity}
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-burgundy">
+          Agenda
+        </p>
+        <p className="mt-2 text-lg font-semibold leading-7 text-ink/82">
+          {committee.agenda}
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-burgundy">
+            Chairs
+          </p>
+          <p className="mt-2 font-semibold text-ink/78">
+            {committee.chairs.join(', ')}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-burgundy">
+            Language
+          </p>
+          <p className="mt-2 font-semibold text-ink/78">{committee.language}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function CommitteeCard({
+  committee,
+  onSelect,
+}: {
+  committee: Committee
+  onSelect: (committee: Committee) => void
+}) {
+  return (
+    <button
+      className="group h-full rounded-lg text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-burgundy"
+      onClick={() => onSelect(committee)}
+      type="button"
+    >
+      <ParchmentCard className="flex h-full flex-col transition duration-200 group-hover:-translate-y-1 group-hover:bg-cream">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-burgundy">
+              {committee.category}
+            </p>
+            <h3 className="mt-3 font-serif text-3xl font-bold leading-tight text-burgundy-dark">
+              {committee.shortName}
+            </h3>
+          </div>
+          <span className="rounded-full border border-burgundy/20 px-3 py-1 text-xs font-bold text-burgundy">
+            {committee.difficulty}
+          </span>
+        </div>
+
+        <p className="mt-5 line-clamp-4 leading-7 text-ink/72">
+          {committee.agenda}
+        </p>
+
+        <div className="mt-auto grid gap-3 pt-7 text-sm font-semibold text-ink/70">
+          <span className="flex items-center gap-2">
+            <UsersRound aria-hidden className="text-burgundy" size={18} />
+            {committee.capacity}
+          </span>
+          <span className="flex items-center gap-2">
+            <Languages aria-hidden className="text-burgundy" size={18} />
+            {committee.language}
+          </span>
+        </div>
+      </ParchmentCard>
+    </button>
+  )
+}
+
+function CommitteesSection() {
+  const [activeFilter, setActiveFilter] = useState<CommitteeCategory | 'All'>(
+    'All',
+  )
+  const [selectedCommittee, setSelectedCommittee] = useState<Committee | null>(
+    null,
+  )
+
+  const filteredCommittees = committees.filter(
+    (committee) =>
+      activeFilter === 'All' || committee.category === activeFilter,
+  )
+
+  return (
+    <Section background={nhmunImages.committees} id="committees">
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+        <SectionIntro
+          body="Explore the first NHMUN'26 committee slate. Final chair names and study guide links can be updated once the academic team confirms them."
+          eyebrow="Our Committees"
+          title="Distinct rooms for debate, crisis, and negotiation."
+        />
+
+        <div
+          aria-label="Committee filters"
+          className="flex flex-wrap gap-2"
+          role="group"
+        >
+          {committeeFilters.map((filter) => (
+            <Button
+              aria-pressed={activeFilter === filter}
+              className={cn(
+                'min-h-10 px-4 py-2 text-xs',
+                activeFilter !== filter &&
+                  'bg-cream/55 text-burgundy hover:bg-cream',
+              )}
+              key={filter}
+              onClick={() => setActiveFilter(filter)}
+              type="button"
+              variant={activeFilter === filter ? 'primary' : 'secondary'}
+            >
+              {filter}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        {filteredCommittees.map((committee) => (
+          <CommitteeCard
+            committee={committee}
+            key={committee.id}
+            onSelect={setSelectedCommittee}
+          />
+        ))}
+      </div>
+
+      <Modal
+        isOpen={Boolean(selectedCommittee)}
+        onClose={() => setSelectedCommittee(null)}
+        title={selectedCommittee?.name ?? ''}
+      >
+        {selectedCommittee && <CommitteeDetail committee={selectedCommittee} />}
+      </Modal>
+    </Section>
+  )
+}
+
 function App() {
   return (
     <main className="min-h-screen bg-parchment text-ink">
@@ -380,33 +558,7 @@ function App() {
 
       <AboutSection />
 
-      <Section background={nhmunImages.committees} id="committees">
-        <SectionIntro
-          body="Committee details will be expanded in Phase 04. This section already defines the landing structure and visual treatment that those cards will use."
-          eyebrow="Our Committees"
-          title="Distinct rooms for debate, crisis, and negotiation."
-        />
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          <ParchmentCard>
-            <p className="font-serif text-3xl font-bold text-burgundy-dark">
-              General Assembly
-            </p>
-            <p className="mt-3 text-ink/72">Procedure-first debate format.</p>
-          </ParchmentCard>
-          <ParchmentCard>
-            <p className="font-serif text-3xl font-bold text-burgundy-dark">
-              Crisis Cabinet
-            </p>
-            <p className="mt-3 text-ink/72">Fast decisions and live updates.</p>
-          </ParchmentCard>
-          <ParchmentCard>
-            <p className="font-serif text-3xl font-bold text-burgundy-dark">
-              Specialized Body
-            </p>
-            <p className="mt-3 text-ink/72">Focused agendas and diplomacy.</p>
-          </ParchmentCard>
-        </div>
-      </Section>
+      <CommitteesSection />
 
       <Section background={nhmunImages.team} id="team">
         <SectionIntro
