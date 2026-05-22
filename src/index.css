@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+@source './';
+@source '../index.html';
 
 @theme {
   --color-parchment: #d9b98a;
