@@ -14,10 +14,28 @@ type D1Database = {
 
 type PagesFunctionContext = {
   env: {
+    APP_ENV?: string
     DB?: D1Database
+    TURNSTILE_SECRET_KEY?: string
   }
   request: Request
 }
+
+type TurnstileVerifyResponse = {
+  'error-codes'?: string[]
+  success?: boolean
+}
+
+type TurnstileVerification =
+  | {
+      ok: true
+    }
+  | {
+      fields: Record<string, string>
+      message: string
+      ok: false
+      status: number
+    }
 
 const jsonHeaders = {
   'cache-control': 'no-store',
@@ -61,6 +79,97 @@ function duplicateApplicationResponse() {
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error)
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function getTurnstileToken(payload: unknown) {
+  if (!isRecord(payload)) {
+    return ''
+  }
+
+  return typeof payload.turnstileToken === 'string'
+    ? payload.turnstileToken.trim()
+    : ''
+}
+
+function shouldSkipTurnstile(env: PagesFunctionContext['env']) {
+  return (
+    !env.TURNSTILE_SECRET_KEY &&
+    ['development', 'local', 'test'].includes((env.APP_ENV ?? '').toLowerCase())
+  )
+}
+
+async function verifyTurnstileToken({
+  env,
+  remoteIp,
+  token,
+}: {
+  env: PagesFunctionContext['env']
+  remoteIp: string | null
+  token: string
+}): Promise<TurnstileVerification> {
+  if (shouldSkipTurnstile(env)) {
+    return { ok: true }
+  }
+
+  if (!env.TURNSTILE_SECRET_KEY) {
+    return {
+      fields: { turnstile: 'Security check is not configured.' },
+      message: 'Application security check is not configured.',
+      ok: false,
+      status: 503,
+    }
+  }
+
+  if (!token) {
+    return {
+      fields: { turnstile: 'Complete the security check.' },
+      message: 'Complete the security check before submitting.',
+      ok: false,
+      status: 403,
+    }
+  }
+
+  const formData = new FormData()
+  formData.append('secret', env.TURNSTILE_SECRET_KEY)
+  formData.append('response', token)
+  formData.append('idempotency_key', crypto.randomUUID())
+
+  if (remoteIp) {
+    formData.append('remoteip', remoteIp)
+  }
+
+  try {
+    const response = await fetch(
+      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+      {
+        body: formData,
+        method: 'POST',
+      },
+    )
+    const result = (await response.json()) as TurnstileVerifyResponse
+
+    if (response.ok && result.success) {
+      return { ok: true }
+    }
+  } catch {
+    return {
+      fields: { turnstile: 'Security check could not be verified.' },
+      message: 'Security check could not be verified. Please try again.',
+      ok: false,
+      status: 502,
+    }
+  }
+
+  return {
+    fields: { turnstile: 'Security check failed. Try again.' },
+    message: 'Security check failed. Please try again.',
+    ok: false,
+    status: 403,
+  }
 }
 
 async function hashHeader(value: string | null) {
@@ -109,6 +218,24 @@ export async function onRequestPost({ env, request }: PagesFunctionContext) {
     )
   }
 
+  const clientIp =
+    request.headers.get('cf-connecting-ip') ??
+    request.headers.get('x-forwarded-for')
+  const turnstile = await verifyTurnstileToken({
+    env,
+    remoteIp: clientIp,
+    token: getTurnstileToken(payload),
+  })
+
+  if (!turnstile.ok) {
+    return errorResponse(
+      turnstile.status ?? 403,
+      'turnstile_failed',
+      turnstile.message,
+      turnstile.fields,
+    )
+  }
+
   const validation = validateApplicationPayload(payload)
   if (!validation.ok) {
     return jsonResponse({ error: validation.error, ok: false }, 422)
@@ -126,9 +253,6 @@ export async function onRequestPost({ env, request }: PagesFunctionContext) {
   }
 
   const applicationId = crypto.randomUUID()
-  const clientIp =
-    request.headers.get('cf-connecting-ip') ??
-    request.headers.get('x-forwarded-for')
   const userAgent = request.headers.get('user-agent')
   const [ipHash, userAgentHash] = await Promise.all([
     hashHeader(clientIp),
