@@ -51,6 +51,15 @@ migrations      Cloudflare D1 migrations
 
 Copy `.env.example` to `.env.local` for local-only values. Never commit real secrets.
 
+### Turnstile
+
+Phase 08 protects the application endpoint with Cloudflare Turnstile.
+
+- `VITE_TURNSTILE_SITE_KEY`: public site key used by the form widget.
+- `TURNSTILE_SECRET_KEY`: private secret used by `/api/applications`.
+- `APP_ENV=local` allows local API testing without a Turnstile secret.
+- Production submissions require a valid Turnstile token before any D1 write.
+
 ## Phase Status
 
 - Phase 00: project setup

@@ -49,9 +49,10 @@ export class ApplicationSubmitError extends Error {
 export async function submitApplicationForm(
   role: ApplicationRole,
   values: ApplicationFormValues,
+  turnstileToken?: string,
 ) {
   const response = await fetch('/api/applications', {
-    body: JSON.stringify({ role, values }),
+    body: JSON.stringify({ role, turnstileToken, values }),
     headers: {
       'content-type': 'application/json',
     },

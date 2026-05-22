@@ -14,6 +14,7 @@ import {
 import { cn } from '../lib/cn'
 import { Button } from './Button'
 import { ParchmentCard } from './ParchmentCard'
+import { TurnstileWidget } from './TurnstileWidget'
 
 type FormValues = Record<string, string | boolean>
 
@@ -24,6 +25,8 @@ const initialValues: FormValues = {
   consentContact: false,
   consentTerms: false,
 }
+
+const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY
 
 function getFieldValue(values: FormValues, id: string) {
   const value = values[id]
@@ -91,6 +94,8 @@ export function ApplicationForm() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [submittedId, setSubmittedId] = useState<string | null>(null)
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
 
   const selectedRole = getRole(values)
   const selectedRoleFields = roleFields[selectedRole]
@@ -163,6 +168,9 @@ export function ApplicationForm() {
       if (!values.consentContact) {
         nextErrors.consentContact = 'You must allow NHMUN26 to contact you.'
       }
+      if (turnstileSiteKey && !turnstileToken) {
+        nextErrors.turnstile = 'Complete the security check.'
+      }
     }
 
     setErrors(nextErrors)
@@ -209,7 +217,11 @@ export function ApplicationForm() {
     setIsSubmitting(true)
 
     try {
-      const response = await submitApplicationForm(selectedRole, values)
+      const response = await submitApplicationForm(
+        selectedRole,
+        values,
+        turnstileToken ?? undefined,
+      )
       setSubmittedId(response.applicationId)
       setSubmitted(true)
     } catch (error) {
@@ -217,6 +229,10 @@ export function ApplicationForm() {
         setSubmitError(error.message)
         if (error.fields) {
           applyServerErrors(error.fields)
+        }
+        if (error.fields?.turnstile) {
+          setTurnstileToken(null)
+          setTurnstileResetKey((current) => current + 1)
         }
       } else {
         setSubmitError('Application could not be submitted. Please try again.')
@@ -251,6 +267,8 @@ export function ApplicationForm() {
             setValues(initialValues)
             setErrors({})
             setSubmitError(null)
+            setTurnstileToken(null)
+            setTurnstileResetKey((current) => current + 1)
           }}
           type="button"
         >
@@ -423,6 +441,40 @@ export function ApplicationForm() {
                   )}
                 </span>
               </label>
+              {turnstileSiteKey ? (
+                <TurnstileWidget
+                  error={errors.turnstile}
+                  key={turnstileResetKey}
+                  onError={() => {
+                    setTurnstileToken(null)
+                    setErrors((current) => ({
+                      ...current,
+                      turnstile: 'Complete the security check.',
+                    }))
+                  }}
+                  onExpire={() => {
+                    setTurnstileToken(null)
+                    setErrors((current) => ({
+                      ...current,
+                      turnstile: 'Security check expired. Complete it again.',
+                    }))
+                  }}
+                  onVerify={(token) => {
+                    setTurnstileToken(token)
+                    setErrors((current) => {
+                      const next = { ...current }
+                      delete next.turnstile
+                      return next
+                    })
+                    setSubmitError(null)
+                  }}
+                  siteKey={turnstileSiteKey}
+                />
+              ) : (
+                <div className="rounded-lg border border-burgundy/15 bg-parchment/35 p-4 text-sm font-semibold text-ink/64">
+                  Security check is disabled in this local preview.
+                </div>
+              )}
             </div>
           </div>
         )}
