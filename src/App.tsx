@@ -7,9 +7,12 @@ import {
   Gauge,
   Landmark,
   Languages,
+  Megaphone,
   MapPin,
   Menu,
+  PenLine,
   ScrollText,
+  ShieldCheck,
   UsersRound,
   X,
 } from 'lucide-react'
@@ -29,6 +32,7 @@ import {
   conferenceRhythm,
   navigationItems,
 } from './data/conference'
+import { teamDepartments, teamMembers } from './data/team'
 import { cn } from './lib/cn'
 
 const countdownLabels = {
@@ -42,6 +46,13 @@ const navigationSectionIds = navigationItems.map((item) => item.id)
 
 const aboutHighlightIcons = [Clock3, BookOpen, MapPin, Landmark] as const
 const aboutPillarIcons = [ScrollText, Compass, UsersRound] as const
+const teamDepartmentIcons = {
+  Academic: BookOpen,
+  Organization: ShieldCheck,
+  Press: Megaphone,
+  Secretariat: Landmark,
+} as const
+const teamSummaryIcons = [Landmark, BookOpen, ShieldCheck, PenLine] as const
 
 function getCountdownParts(targetDate: Date) {
   const total = Math.max(0, targetDate.getTime() - Date.now())
@@ -550,6 +561,84 @@ function CommitteesSection() {
   )
 }
 
+function TeamMemberCard({ member }: { member: (typeof teamMembers)[number] }) {
+  const Icon = teamDepartmentIcons[member.department]
+
+  return (
+    <ParchmentCard className="flex h-full flex-col">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-burgundy text-cream">
+          <Icon aria-hidden size={22} />
+        </div>
+        <span className="rounded-full border border-burgundy/20 px-3 py-1 text-xs font-bold text-burgundy">
+          {member.department}
+        </span>
+      </div>
+      <h3 className="mt-6 font-serif text-3xl font-bold leading-tight text-burgundy-dark">
+        {member.role}
+      </h3>
+      <p className="mt-2 text-sm font-extrabold uppercase tracking-[0.18em] text-burgundy">
+        {member.name}
+      </p>
+      <p className="mt-5 leading-7 text-ink/72">{member.bio}</p>
+    </ParchmentCard>
+  )
+}
+
+function TeamSection() {
+  return (
+    <Section background={nhmunImages.team} id="team">
+      <div className="grid items-start gap-12 lg:grid-cols-[0.9fr_1.1fr]">
+        <div>
+          <SectionIntro
+            body="The NHMUN26 team structure is built around clear ownership: academic quality, participant logistics, media presence, and conference leadership."
+            eyebrow="Our Team"
+            title="A conference team built around clarity and care."
+          />
+
+          <DecorativeFrame className="mt-10 bg-cream/35">
+            <div className="rounded-lg bg-cream/82 p-6">
+              <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-burgundy">
+                Team operating model
+              </p>
+              <div className="mt-6 grid gap-4">
+                {teamDepartments.map((department, index) => {
+                  const Icon = teamSummaryIcons[index]
+
+                  return (
+                    <div
+                      className="grid gap-4 rounded-lg border border-burgundy/15 bg-parchment/45 p-4 sm:grid-cols-[auto_1fr]"
+                      key={department.label}
+                    >
+                      <div className="flex size-11 items-center justify-center rounded-full bg-burgundy text-cream">
+                        <Icon aria-hidden size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-serif text-2xl font-bold text-burgundy-dark">
+                          {department.label}
+                        </h3>
+                        <p className="mt-1 leading-6 text-ink/72">
+                          {department.description}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </DecorativeFrame>
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          {teamMembers.map((member) => (
+            <TeamMemberCard key={member.id} member={member} />
+          ))}
+        </div>
+      </div>
+    </Section>
+  )
+}
+
 function App() {
   return (
     <main className="min-h-screen bg-parchment text-ink">
@@ -560,13 +649,7 @@ function App() {
 
       <CommitteesSection />
 
-      <Section background={nhmunImages.team} id="team">
-        <SectionIntro
-          body="The secretariat and organization team area is reserved for Phase 05, with the final staff list, roles, and optional profile photos."
-          eyebrow="Our Team"
-          title="A conference team built around clarity and care."
-        />
-      </Section>
+      <TeamSection />
 
       <Section background={nhmunImages.apply} id="apply">
         <div className="grid items-center gap-10 lg:grid-cols-[0.9fr_1fr]">
