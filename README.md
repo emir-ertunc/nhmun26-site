@@ -27,9 +27,12 @@ npm install
 npm run dev
 ```
 
+Local preview: http://127.0.0.1:5173/
+
 ## Checks
 
 ```bash
+npm run check
 npm run lint
 npm run build
 npm run format
@@ -50,6 +53,7 @@ migrations      Cloudflare D1 migrations
 ## Environment
 
 Copy `.env.example` to `.env.local` for local-only values. Never commit real secrets.
+See `docs/deployment.md` for the Cloudflare Pages, D1, Turnstile, and domain setup runbook.
 
 ### Turnstile
 
