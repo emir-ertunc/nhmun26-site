@@ -1,0 +1,16 @@
+{
+  "background_color": "#d9b98a",
+  "description": "NHMUN'26 Model United Nations Conference in Izmir Konak.",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml"
+    }
+  ],
+  "name": "NHMUN'26",
+  "short_name": "NHMUN26",
+  "start_url": "/",
+  "theme_color": "#4f1512"
+}

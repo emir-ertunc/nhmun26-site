@@ -660,7 +660,7 @@ function App() {
       <Section background={nhmunImages.apply} id="apply">
         <div className="grid items-start gap-10 lg:grid-cols-[0.82fr_1.18fr]">
           <SectionIntro
-            body="Choose your role, complete the required details, and review the application before submitting. This phase keeps submission local; the database-backed API arrives in Phase 7."
+            body="Choose your role, complete the required details, and review your application before submitting it to the NHMUN'26 team."
             eyebrow="Apply Now"
             title="Applications for NHMUN'26 start here."
           />
