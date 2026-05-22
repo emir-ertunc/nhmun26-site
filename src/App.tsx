@@ -4,7 +4,6 @@ import { nhmunImages } from './assets/nhmun'
 import { ButtonLink } from './components/Button'
 import { DecorativeFrame } from './components/DecorativeFrame'
 import { ParchmentCard } from './components/ParchmentCard'
-import { ResponsiveImage } from './components/ResponsiveImage'
 import { Section } from './components/Section'
 import { conference, navigationItems } from './data/conference'
 import { cn } from './lib/cn'
@@ -271,8 +270,21 @@ function App() {
             title="A focused conference for young diplomats."
           />
           <DecorativeFrame>
-            <div className="aspect-[4/3] overflow-hidden rounded-lg">
-              <ResponsiveImage image={nhmunImages.buttonReference} />
+            <div className="grid min-h-72 gap-4 rounded-lg bg-cream/74 p-6">
+              {[
+                'Academic discipline',
+                'Diplomatic clarity',
+                'Izmir heritage',
+              ].map((value) => (
+                <ParchmentCard
+                  className="flex items-center justify-center text-center"
+                  key={value}
+                >
+                  <p className="font-serif text-2xl font-bold text-burgundy-dark">
+                    {value}
+                  </p>
+                </ParchmentCard>
+              ))}
             </div>
           </DecorativeFrame>
         </div>
