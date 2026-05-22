@@ -57,3 +57,9 @@ Copy `.env.example` to `.env.local` for local-only values. Never commit real sec
 - Phase 01: NHMUN visual system
 - Phase 02: landing shell
 - Phase 03+: conference sections, applications, admin, deployment
+
+## Local Visual Assets
+
+Source images are copied from `C:\Users\emir_\Desktop\site görseller` into
+`src/assets/nhmun/originals` and optimized into AVIF/WebP variants under
+`src/assets/nhmun`.
