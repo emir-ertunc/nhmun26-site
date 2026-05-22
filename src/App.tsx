@@ -1,11 +1,29 @@
-import { CalendarDays, ChevronDown, MapPin, Menu, X } from 'lucide-react'
+import {
+  BookOpen,
+  CalendarDays,
+  ChevronDown,
+  Clock3,
+  Compass,
+  Landmark,
+  MapPin,
+  Menu,
+  ScrollText,
+  UsersRound,
+  X,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { nhmunImages } from './assets/nhmun'
 import { ButtonLink } from './components/Button'
 import { DecorativeFrame } from './components/DecorativeFrame'
 import { ParchmentCard } from './components/ParchmentCard'
 import { Section } from './components/Section'
-import { conference, navigationItems } from './data/conference'
+import {
+  aboutHighlights,
+  aboutPillars,
+  conference,
+  conferenceRhythm,
+  navigationItems,
+} from './data/conference'
 import { cn } from './lib/cn'
 
 const countdownLabels = {
@@ -16,6 +34,9 @@ const countdownLabels = {
 } as const
 
 const navigationSectionIds = navigationItems.map((item) => item.id)
+
+const aboutHighlightIcons = [Clock3, BookOpen, MapPin, Landmark] as const
+const aboutPillarIcons = [ScrollText, Compass, UsersRound] as const
 
 function getCountdownParts(targetDate: Date) {
   const total = Math.max(0, targetDate.getTime() - Date.now())
@@ -256,39 +277,108 @@ function SectionIntro({
   )
 }
 
+function AboutSection() {
+  return (
+    <Section background={nhmunImages.about} id="about">
+      <div className="grid items-start gap-12 lg:grid-cols-[0.98fr_1.02fr]">
+        <div>
+          <SectionIntro
+            body="NHMUN'26 is a three-day academic diplomacy experience in Izmir, built for delegates who want structured debate, clear procedure, and a conference atmosphere shaped by local heritage."
+            eyebrow="About Us"
+            title="A focused conference for young diplomats."
+          />
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+            {aboutHighlights.map((item, index) => {
+              const Icon = aboutHighlightIcons[index]
+
+              return (
+                <ParchmentCard className="min-h-48" key={item.label}>
+                  <Icon aria-hidden className="text-burgundy" size={28} />
+                  <p className="mt-5 text-xs font-extrabold uppercase tracking-[0.22em] text-burgundy">
+                    {item.label}
+                  </p>
+                  <h3 className="mt-2 font-serif text-2xl font-bold text-burgundy-dark">
+                    {item.value}
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-ink/70">
+                    {item.description}
+                  </p>
+                </ParchmentCard>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="grid gap-6">
+          <DecorativeFrame className="bg-cream/35">
+            <div className="rounded-lg bg-cream/82 p-6 md:p-8">
+              <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-burgundy">
+                Conference Identity
+              </p>
+              <h3 className="mt-4 font-serif text-4xl font-bold leading-tight text-burgundy-dark">
+                Debate with structure, presence, and a sense of place.
+              </h3>
+              <p className="mt-5 leading-7 text-ink/74">
+                NHMUN26 is not planned as a generic template site or a rotating
+                event platform. The experience, visuals, and application flow
+                are tailored to this specific conference: a warm, formal,
+                parchment-led identity for an academic MUN in Izmir Konak.
+              </p>
+            </div>
+          </DecorativeFrame>
+
+          <div className="grid gap-4">
+            {aboutPillars.map((pillar, index) => {
+              const Icon = aboutPillarIcons[index]
+
+              return (
+                <div
+                  className="grid gap-4 rounded-lg border border-burgundy/18 bg-cream/72 p-5 shadow-parchment sm:grid-cols-[auto_1fr]"
+                  key={pillar.title}
+                >
+                  <div className="flex size-12 items-center justify-center rounded-full bg-burgundy text-cream">
+                    <Icon aria-hidden size={22} />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-2xl font-bold text-burgundy-dark">
+                      {pillar.title}
+                    </h3>
+                    <p className="mt-2 leading-7 text-ink/72">{pillar.body}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          <ParchmentCard>
+            <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-burgundy">
+              Three-day rhythm
+            </p>
+            <ol className="mt-5 grid gap-3">
+              {conferenceRhythm.map((item, index) => (
+                <li className="flex gap-4" key={item}>
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-burgundy font-serif text-sm font-bold text-cream">
+                    {index + 1}
+                  </span>
+                  <span className="pt-1 font-semibold text-ink/78">{item}</span>
+                </li>
+              ))}
+            </ol>
+          </ParchmentCard>
+        </div>
+      </div>
+    </Section>
+  )
+}
+
 function App() {
   return (
     <main className="min-h-screen bg-parchment text-ink">
       <Header />
       <Hero />
 
-      <Section background={nhmunImages.about} id="about">
-        <div className="grid items-center gap-10 lg:grid-cols-[1fr_0.75fr]">
-          <SectionIntro
-            body="NHMUN'26 is a three-day academic diplomacy experience in Izmir, built for delegates who want structured debate, clear procedure, and a conference atmosphere shaped by local heritage."
-            eyebrow="About Us"
-            title="A focused conference for young diplomats."
-          />
-          <DecorativeFrame>
-            <div className="grid min-h-72 gap-4 rounded-lg bg-cream/74 p-6">
-              {[
-                'Academic discipline',
-                'Diplomatic clarity',
-                'Izmir heritage',
-              ].map((value) => (
-                <ParchmentCard
-                  className="flex items-center justify-center text-center"
-                  key={value}
-                >
-                  <p className="font-serif text-2xl font-bold text-burgundy-dark">
-                    {value}
-                  </p>
-                </ParchmentCard>
-              ))}
-            </div>
-          </DecorativeFrame>
-        </div>
-      </Section>
+      <AboutSection />
 
       <Section background={nhmunImages.committees} id="committees">
         <SectionIntro
