@@ -109,10 +109,29 @@ The sender domain must be verified in Resend before production sends.
 
 ## Release Checklist
 
+### Before Buying The Domain
+
 1. `npm run check`
-2. Confirm `wrangler.toml` has the real D1 `database_id`
-3. Apply D1 migrations with `npx wrangler d1 migrations apply nhmun26-applications --remote`
-4. Set Cloudflare Pages environment variables
-5. Deploy `main`
-6. Open the production site and submit one test application
-7. Check D1 for the inserted application row
+2. Create the Cloudflare Pages project and connect this GitHub repository
+3. Create the D1 database
+4. Replace `replace-after-d1-create` in `wrangler.toml`
+5. Apply D1 migrations with `npx wrangler d1 migrations apply nhmun26-applications --remote`
+6. Create the Turnstile widget
+7. Create the Cloudflare Access application for `/admin` and `/api/admin/*`
+8. Create the Resend account and API key
+9. Set all Cloudflare Pages environment variables that do not depend on the final sender domain
+10. Deploy `main`
+11. Open `/api/health` and confirm only domain-dependent email sender values are missing
+
+### After Buying The Domain
+
+1. Attach the domain to Cloudflare Pages
+2. Set `PUBLIC_SITE_URL` to the final domain
+3. Verify the sender domain in Resend
+4. Set `EMAIL_FROM`, `EMAIL_REPLY_TO`, and `EMAIL_NOTIFICATION_TO`
+5. Redeploy `main`
+6. Open `/api/health` and confirm `ok: true`
+7. Submit one test application
+8. Check D1 for the inserted application row
+9. Confirm the applicant confirmation email arrives
+10. Confirm the application appears in `/admin`

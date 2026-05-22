@@ -38,6 +38,8 @@ npm run build
 npm run format
 ```
 
+Production readiness can be checked after deploy at `/api/health`.
+
 ## Project Structure
 
 ```text
