@@ -7,6 +7,10 @@ import {
   personalFields,
   roleFields,
 } from '../data/application'
+import {
+  ApplicationSubmitError,
+  submitApplicationForm,
+} from '../lib/applicationApi'
 import { cn } from '../lib/cn'
 import { Button } from './Button'
 import { ParchmentCard } from './ParchmentCard'
@@ -83,10 +87,21 @@ export function ApplicationForm() {
   const [values, setValues] = useState<FormValues>(initialValues)
   const [stepIndex, setStepIndex] = useState(0)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
+  const [submittedId, setSubmittedId] = useState<string | null>(null)
 
   const selectedRole = getRole(values)
   const selectedRoleFields = roleFields[selectedRole]
+  const selectedRoleFieldIds = useMemo(
+    () => new Set<string>(selectedRoleFields.map((field) => field.id)),
+    [selectedRoleFields],
+  )
+  const personalFieldIds = useMemo(
+    () => new Set<string>(personalFields.map((field) => field.id)),
+    [],
+  )
 
   const reviewItems = useMemo(() => {
     const fields = [...personalFields, ...selectedRoleFields]
@@ -98,6 +113,7 @@ export function ApplicationForm() {
 
   const updateValue = (id: string, value: string | boolean) => {
     setValues((current) => ({ ...current, [id]: value }))
+    setSubmitError(null)
     setErrors((current) => {
       const next = { ...current }
       delete next[id]
@@ -165,12 +181,49 @@ export function ApplicationForm() {
     setStepIndex((current) => Math.max(current - 1, 0))
   }
 
-  const submitApplication = () => {
+  const applyServerErrors = (fieldErrors: Record<string, string>) => {
+    setErrors(fieldErrors)
+
+    const fieldIds = Object.keys(fieldErrors)
+    if (fieldIds.includes('role')) {
+      setStepIndex(0)
+      return
+    }
+    if (fieldIds.some((fieldId) => personalFieldIds.has(fieldId))) {
+      setStepIndex(1)
+      return
+    }
+    if (fieldIds.some((fieldId) => selectedRoleFieldIds.has(fieldId))) {
+      setStepIndex(2)
+      return
+    }
+    setStepIndex(3)
+  }
+
+  const submitApplication = async () => {
     if (!validateStep(3)) {
       return
     }
 
-    setSubmitted(true)
+    setSubmitError(null)
+    setIsSubmitting(true)
+
+    try {
+      const response = await submitApplicationForm(selectedRole, values)
+      setSubmittedId(response.applicationId)
+      setSubmitted(true)
+    } catch (error) {
+      if (error instanceof ApplicationSubmitError) {
+        setSubmitError(error.message)
+        if (error.fields) {
+          applyServerErrors(error.fields)
+        }
+      } else {
+        setSubmitError('Application could not be submitted. Please try again.')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (submitted) {
@@ -181,16 +234,23 @@ export function ApplicationForm() {
           Application received
         </h3>
         <p className="mt-4 leading-7 text-ink/72">
-          This is the Phase 6 frontend success state. The real database and API
-          submission flow will be connected in Phase 7.
+          Your application has been recorded. Keep this reference ID for any
+          follow-up with the NHMUN26 team.
         </p>
+        {submittedId && (
+          <p className="mt-4 rounded-lg border border-burgundy/15 bg-parchment/50 px-4 py-3 font-mono text-sm font-bold text-burgundy-dark">
+            {submittedId}
+          </p>
+        )}
         <Button
           className="mt-6"
           onClick={() => {
             setSubmitted(false)
+            setSubmittedId(null)
             setStepIndex(0)
             setValues(initialValues)
             setErrors({})
+            setSubmitError(null)
           }}
           type="button"
         >
@@ -369,7 +429,7 @@ export function ApplicationForm() {
 
         <div className="mt-8 flex flex-wrap justify-between gap-3">
           <Button
-            disabled={stepIndex === 0}
+            disabled={stepIndex === 0 || isSubmitting}
             onClick={goBack}
             type="button"
             variant="secondary"
@@ -377,13 +437,23 @@ export function ApplicationForm() {
             Back
           </Button>
           {stepIndex < steps.length - 1 ? (
-            <Button onClick={goNext} type="button">
+            <Button disabled={isSubmitting} onClick={goNext} type="button">
               Continue
             </Button>
           ) : (
-            <Button type="submit">Submit Application</Button>
+            <Button disabled={isSubmitting} type="submit">
+              {isSubmitting ? 'Submitting...' : 'Submit Application'}
+            </Button>
           )}
         </div>
+        {submitError && (
+          <p
+            className="mt-4 rounded-lg border border-burgundy/20 bg-burgundy/8 px-4 py-3 text-sm font-semibold text-burgundy"
+            role="alert"
+          >
+            {submitError}
+          </p>
+        )}
       </form>
     </ParchmentCard>
   )
