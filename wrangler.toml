@@ -1,0 +1,8 @@
+name = "nhmun26-site"
+compatibility_date = "2026-05-22"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nhmun26-applications"
+database_id = "replace-after-d1-create"
