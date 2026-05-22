@@ -47,6 +47,10 @@ TURNSTILE_SECRET_KEY=<turnstile-secret-key>
 ADMIN_EMAIL_ALLOWLIST=you@example.com
 CLOUDFLARE_ACCESS_AUD=<access-application-audience-tag>
 CLOUDFLARE_ACCESS_TEAM_DOMAIN=<team-name>.cloudflareaccess.com
+RESEND_API_KEY=<resend-api-key>
+EMAIL_FROM=NHMUN26 <applications@your-domain.example>
+EMAIL_NOTIFICATION_TO=team@example.com
+EMAIL_REPLY_TO=team@example.com
 ```
 
 Keep `TURNSTILE_SECRET_KEY` private. `VITE_TURNSTILE_SITE_KEY` is intentionally
@@ -82,6 +86,19 @@ checks `ADMIN_EMAIL_ALLOWLIST`.
 
 For local API tests only, `APP_ENV=local` allows the `x-admin-email` request
 header if that email is also present in `ADMIN_EMAIL_ALLOWLIST`.
+
+## Email Delivery
+
+Phase 11 sends application confirmation emails with Resend after a successful D1
+write. Email delivery failures do not reject the application; they are recorded
+in `audit_logs` for follow-up.
+
+- `RESEND_API_KEY`: private Resend API key.
+- `EMAIL_FROM`: verified sender address, optionally with a display name.
+- `EMAIL_NOTIFICATION_TO`: optional comma-separated team notification recipients.
+- `EMAIL_REPLY_TO`: optional reply-to address for applicant replies.
+
+The sender domain must be verified in Resend before production sends.
 
 ## Release Checklist
 
