@@ -4,8 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "check": "npm run format && npm run lint && npm run build && npm run functions:check",
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "functions:check": "tsc --noEmit --ignoreConfig --target ES2023 --lib ES2023,DOM --module ESNext --moduleResolution bundler --skipLibCheck functions/api/applications.ts functions/_shared/applicationValidation.ts",
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
