@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { AdminApp } from './AdminApp'
 import { nhmunImages } from './assets/nhmun'
 import { ApplicationForm } from './components/ApplicationForm'
 import { Button, ButtonLink } from './components/Button'
@@ -641,6 +642,10 @@ function TeamSection() {
 }
 
 function App() {
+  if (window.location.pathname === '/admin') {
+    return <AdminApp />
+  }
+
   return (
     <main className="min-h-screen bg-parchment text-ink">
       <Header />
