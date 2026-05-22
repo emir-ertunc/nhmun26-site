@@ -7,7 +7,7 @@
     "check": "npm run format && npm run lint && npm run build && npm run functions:check",
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "functions:check": "tsc --noEmit --ignoreConfig --target ES2023 --lib ES2023,DOM --module ESNext --moduleResolution bundler --skipLibCheck functions/api/applications.ts functions/api/admin/me.ts functions/api/admin/applications.ts functions/api/admin/applications/[id].ts functions/_shared/adminAuth.ts functions/_shared/applicationValidation.ts functions/_shared/d1.ts functions/_shared/http.ts",
+    "functions:check": "tsc --noEmit --ignoreConfig --target ES2023 --lib ES2023,DOM --module ESNext --moduleResolution bundler --skipLibCheck functions/api/applications.ts functions/api/admin/me.ts functions/api/admin/applications.ts functions/api/admin/applications/[id].ts functions/_shared/adminAuth.ts functions/_shared/applicationValidation.ts functions/_shared/d1.ts functions/_shared/email.ts functions/_shared/http.ts",
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",

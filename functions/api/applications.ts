@@ -1,21 +1,17 @@
 import { validateApplicationPayload } from '../_shared/applicationValidation'
-
-type D1Value = string | number | null
-
-type D1PreparedStatement = {
-  bind: (...values: D1Value[]) => D1PreparedStatement
-  first: <TRecord extends Record<string, unknown>>() => Promise<TRecord | null>
-  run: () => Promise<unknown>
-}
-
-type D1Database = {
-  prepare: (query: string) => D1PreparedStatement
-}
+import type { D1Database } from '../_shared/d1'
+import { sendApplicationEmails } from '../_shared/email'
+import { jsonResponse } from '../_shared/http'
 
 type PagesFunctionContext = {
   env: {
     APP_ENV?: string
     DB?: D1Database
+    EMAIL_FROM?: string
+    EMAIL_NOTIFICATION_TO?: string
+    EMAIL_REPLY_TO?: string
+    PUBLIC_SITE_URL?: string
+    RESEND_API_KEY?: string
     TURNSTILE_SECRET_KEY?: string
   }
   request: Request
@@ -36,18 +32,6 @@ type TurnstileVerification =
       ok: false
       status: number
     }
-
-const jsonHeaders = {
-  'cache-control': 'no-store',
-  'content-type': 'application/json; charset=utf-8',
-}
-
-function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    headers: jsonHeaders,
-    status,
-  })
-}
 
 function errorResponse(
   status: number,
@@ -184,6 +168,37 @@ async function hashHeader(value: string | null) {
     .join('')
 }
 
+async function insertAuditLog({
+  applicationId,
+  db,
+  eventType,
+  metadata,
+}: {
+  applicationId: string
+  db: D1Database
+  eventType: string
+  metadata: unknown
+}) {
+  await db
+    .prepare(
+      `INSERT INTO audit_logs (
+        id,
+        application_id,
+        event_type,
+        actor,
+        metadata_json
+      ) VALUES (?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      crypto.randomUUID(),
+      applicationId,
+      eventType,
+      'system',
+      JSON.stringify(metadata),
+    )
+    .run()
+}
+
 export async function onRequestOptions() {
   return new Response(null, {
     headers: {
@@ -314,30 +329,49 @@ export async function onRequestPost({ env, request }: PagesFunctionContext) {
   }
 
   try {
-    await env.DB.prepare(
-      `INSERT INTO audit_logs (
-        id,
-        application_id,
-        event_type,
-        actor,
-        metadata_json
-      ) VALUES (?, ?, ?, ?, ?)`,
-    )
-      .bind(
-        crypto.randomUUID(),
-        applicationId,
-        'application_submitted',
-        'applicant',
-        JSON.stringify({ role }),
-      )
-      .run()
+    await insertAuditLog({
+      applicationId,
+      db: env.DB,
+      eventType: 'application_submitted',
+      metadata: { role },
+    })
   } catch {
     // The application write is the source of truth; audit logging must not block applicants.
+  }
+
+  const emailResult = await sendApplicationEmails({
+    applicationId,
+    env,
+    role,
+    values,
+  })
+
+  try {
+    await insertAuditLog({
+      applicationId,
+      db: env.DB,
+      eventType: emailResult.ok
+        ? emailResult.skipped
+          ? 'application_email_skipped'
+          : 'application_email_sent'
+        : 'application_email_failed',
+      metadata: emailResult,
+    })
+  } catch {
+    // Email audit logging must not block applicants.
   }
 
   return jsonResponse(
     {
       applicationId,
+      email:
+        emailResult.ok && !emailResult.skipped
+          ? {
+              sent: true,
+            }
+          : {
+              sent: false,
+            },
       ok: true,
     },
     201,
