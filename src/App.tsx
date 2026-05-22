@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { nhmunImages } from './assets/nhmun'
+import { ApplicationForm } from './components/ApplicationForm'
 import { Button, ButtonLink } from './components/Button'
 import { DecorativeFrame } from './components/DecorativeFrame'
 import { Modal } from './components/Modal'
@@ -652,33 +653,13 @@ function App() {
       <TeamSection />
 
       <Section background={nhmunImages.apply} id="apply">
-        <div className="grid items-center gap-10 lg:grid-cols-[0.9fr_1fr]">
+        <div className="grid items-start gap-10 lg:grid-cols-[0.82fr_1.18fr]">
           <SectionIntro
-            body="The application flow will become a step-by-step form in Phase 06. For now, this landing shell anchors the application section and call to action."
+            body="Choose your role, complete the required details, and review the application before submitting. This phase keeps submission local; the database-backed API arrives in Phase 7."
             eyebrow="Apply Now"
-            title="Applications for NHMUN'26 will open here."
+            title="Applications for NHMUN'26 start here."
           />
-          <ParchmentCard className="bg-cream/88">
-            <p className="text-sm font-bold uppercase tracking-[0.24em] text-burgundy">
-              Planned roles
-            </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              {[
-                'Delegate',
-                'Delegation',
-                'Chair',
-                'Press',
-                'Organization Team',
-              ].map((role) => (
-                <span
-                  className="rounded-full border border-burgundy/20 px-4 py-2 text-sm font-bold text-burgundy-dark"
-                  key={role}
-                >
-                  {role}
-                </span>
-              ))}
-            </div>
-          </ParchmentCard>
+          <ApplicationForm />
         </div>
       </Section>
 
