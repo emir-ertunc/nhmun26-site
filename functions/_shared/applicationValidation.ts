@@ -90,6 +90,67 @@ function getString(values: Record<string, unknown>, id: string) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
+function formatDateOfBirth(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8)
+  if (digits.length <= 2) {
+    return digits
+  }
+  if (digits.length <= 4) {
+    return `${digits.slice(0, 2)}/${digits.slice(2)}`
+  }
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
+}
+
+function formatPhoneNumber(value: string) {
+  const digits = value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 10)
+  const groups = [
+    digits.slice(0, 3),
+    digits.slice(3, 6),
+    digits.slice(6, 8),
+    digits.slice(8, 10),
+  ].filter(Boolean)
+
+  return groups.join(' ')
+}
+
+function formatFieldValue(fieldId: string, value: string) {
+  if (fieldId === 'dateOfBirth') {
+    return formatDateOfBirth(value)
+  }
+  if (fieldId === 'phone') {
+    return formatPhoneNumber(value)
+  }
+  if (fieldId === 'email') {
+    return value.replace(/\s/g, '').toLowerCase()
+  }
+  return value
+}
+
+function isValidDateOfBirth(value: string) {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value)
+  if (!match) {
+    return false
+  }
+
+  const day = Number(match[1])
+  const month = Number(match[2])
+  const year = Number(match[3])
+  const date = new Date(year, month - 1, day)
+  const now = new Date()
+
+  return (
+    year >= 1900 &&
+    date <= now &&
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  )
+}
+
+function isValidPhoneNumber(value: string) {
+  return /^5\d{2} \d{3} \d{2} \d{2}$/.test(value)
+}
+
 function getBoolean(values: Record<string, unknown>, id: string) {
   return values[id] === true
 }
@@ -216,7 +277,7 @@ export function validateApplicationPayload(
   const values: ApplicationValues = { role }
 
   for (const fieldId of [...requiredFieldIds, ...optionalFieldIds]) {
-    const value = getString(valuesSource, fieldId)
+    const value = formatFieldValue(fieldId, getString(valuesSource, fieldId))
     values[fieldId] = value
 
     if (requiredFieldSet.has(fieldId) && !value) {
@@ -229,6 +290,17 @@ export function validateApplicationPayload(
   const email = String(values.email ?? '')
   if (email && !emailPattern.test(email)) {
     fields.email = 'Enter a valid email address.'
+  }
+
+  const dateOfBirth = String(values.dateOfBirth ?? '')
+  if (dateOfBirth && !isValidDateOfBirth(dateOfBirth)) {
+    fields.dateOfBirth = 'Enter date as DD/MM/YYYY.'
+  }
+
+  const phone = String(values.phone ?? '')
+  if (phone && !isValidPhoneNumber(phone)) {
+    fields.phone =
+      'Enter a 10-digit phone number without 0, e.g. 5XX XXX XX XX.'
   }
 
   for (const fieldId of ['chairboardMotivation', 'motivationLetter']) {
