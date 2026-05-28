@@ -41,6 +41,80 @@ function isEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
+function countWords(value: string) {
+  return value.trim().split(/\s+/).filter(Boolean).length
+}
+
+function needsMinimumWords(fieldId: string) {
+  return ['chairboardMotivation', 'motivationLetter'].includes(fieldId)
+}
+
+function normalizePreferenceValue(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9\s]/g, ' ')
+}
+
+function includesAny(value: string, terms: readonly string[]) {
+  const normalizedValue = normalizePreferenceValue(value)
+  return terms.some((term) => normalizedValue.includes(term))
+}
+
+function getConditionalChairboardRequiredFields(values: FormValues) {
+  const preferences = getFieldValue(values, 'preferredCommittees')
+  const hasFcc = includesAny(preferences, ['fcc', 'league of legends', 'lol'])
+  const hasSpecialGa = includesAny(preferences, ['special ga'])
+  const hasGaCommittee = includesAny(preferences, [
+    'ga',
+    'general assembly',
+    'unep',
+    'who',
+    'women',
+    'specpol',
+  ])
+  const hasCrisisCommittee = includesAny(preferences, [
+    'mkk',
+    'fcc',
+    'crisis',
+    'seven years',
+    'league of legends',
+    'lol',
+  ])
+  const hasNonCrisisCommittee = includesAny(preferences, [
+    'unep',
+    'interpol',
+    'who',
+    'women',
+    'specpol',
+    'tbmm',
+    'special ga',
+    'general assembly',
+  ])
+  const onlyCrisis = hasCrisisCommittee && !hasNonCrisisCommittee
+  const requiredFields: Record<string, string> = {}
+
+  if (onlyCrisis) {
+    requiredFields.directiveProcedure =
+      'This field is required when you apply only for crisis committees.'
+    requiredFields.montcalmDirective =
+      'This field is required when you apply only for crisis committees.'
+  }
+  if (hasFcc) {
+    requiredFields.lolKnowledge =
+      'This field is required when you apply for FCC.'
+  }
+  if (hasSpecialGa) {
+    requiredFields.specialGaSeries =
+      'This field is required when you apply for Special GA.'
+  }
+  if (hasGaCommittee) {
+    requiredFields.gaProcedure =
+      'This field is required when you apply for General Assembly committees.'
+    requiredFields.supportDelegateScenario =
+      'This field is required when you apply for General Assembly committees.'
+  }
+
+  return requiredFields
+}
+
 function FieldControl({
   error,
   field,
@@ -56,10 +130,16 @@ function FieldControl({
     'mt-2 w-full rounded-lg border bg-cream/82 px-4 py-3 text-base font-semibold text-ink outline-none transition placeholder:text-ink/38 focus:border-burgundy focus:ring-2 focus:ring-burgundy/20',
     error ? 'border-burgundy' : 'border-burgundy/20',
   )
+  const isLongLabel = field.label.length > 80
 
   return (
     <label className="block">
-      <span className="text-sm font-extrabold uppercase tracking-[0.18em] text-burgundy">
+      <span
+        className={cn(
+          'text-sm font-extrabold text-burgundy',
+          isLongLabel ? 'leading-6' : 'uppercase tracking-[0.18em]',
+        )}
+      >
         {field.label}
       </span>
       {field.multiline ? (
@@ -98,7 +178,8 @@ export function ApplicationForm() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
 
   const selectedRole = getRole(values)
-  const selectedRoleFields = roleFields[selectedRole]
+  const selectedRoleFields: readonly ApplicationField[] =
+    roleFields[selectedRole]
   const selectedRoleFieldIds = useMemo(
     () => new Set<string>(selectedRoleFields.map((field) => field.id)),
     [selectedRoleFields],
@@ -152,12 +233,21 @@ export function ApplicationForm() {
         const value = getFieldValue(values, field.id).trim()
         if (field.required && !value) {
           nextErrors[field.id] = 'This field is required.'
+        } else if (needsMinimumWords(field.id) && countWords(value) < 150) {
+          nextErrors[field.id] = 'Write at least 150 words.'
         }
       }
 
-      const advisorEmail = getFieldValue(values, 'advisorEmail').trim()
-      if (advisorEmail && !isEmail(advisorEmail)) {
-        nextErrors.advisorEmail = 'Enter a valid advisor email address.'
+      if (selectedRole === 'Chairboard') {
+        const conditionalRequiredFields =
+          getConditionalChairboardRequiredFields(values)
+        for (const [fieldId, message] of Object.entries(
+          conditionalRequiredFields,
+        )) {
+          if (!getFieldValue(values, fieldId).trim()) {
+            nextErrors[fieldId] = message
+          }
+        }
       }
     }
 

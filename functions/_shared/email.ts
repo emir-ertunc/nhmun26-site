@@ -40,8 +40,15 @@ type SendEmailOptions = {
 type SendApplicationEmailOptions = {
   applicationId: string
   env: EmailEnv
-  role: ApplicationRole
+  role: ApplicationRole | string
   values: ApplicationValues
+}
+
+type DecisionStatus = 'accepted' | 'rejected' | 'waitlisted'
+
+type SendDecisionEmailOptions = SendApplicationEmailOptions & {
+  reviewerNotes?: string | null
+  status: DecisionStatus
 }
 
 function escapeHtml(value: string) {
@@ -234,6 +241,92 @@ export async function sendApplicationEmails(
     return {
       applicantEmailId,
       notificationEmailId,
+      ok: true,
+    }
+  } catch (error) {
+    return {
+      message: error instanceof Error ? error.message : String(error),
+      ok: false,
+    }
+  }
+}
+
+function buildDecisionEmail({
+  applicationId,
+  env,
+  reviewerNotes,
+  role,
+  status,
+  values,
+}: SendDecisionEmailOptions) {
+  const fullName = getString(values, 'fullName')
+  const siteUrl = getSiteUrl(env)
+  const decisionLabels = {
+    accepted: 'accepted',
+    rejected: 'not accepted',
+    waitlisted: 'waitlisted',
+  } as const
+  const decisionText = decisionLabels[status]
+  const noteText = reviewerNotes?.trim()
+  const noteHtml = noteText
+    ? `<p><strong>Note from the NHMUN'26 team:</strong><br />${escapeHtml(noteText)}</p>`
+    : ''
+  const notePlain = noteText
+    ? ['', "Note from the NHMUN'26 team:", noteText]
+    : []
+  const siteLink = siteUrl
+    ? `<p>You can visit the conference site at <a href="${siteUrl}">${siteUrl}</a>.</p>`
+    : ''
+
+  return {
+    html: `
+      <div style="font-family: Georgia, 'Times New Roman', serif; color: #20130d; line-height: 1.6;">
+        <h1 style="color: #4f1512;">NHMUN'26 application update</h1>
+        <p>Dear ${escapeHtml(fullName)},</p>
+        <p>Your ${escapeHtml(role)} application has been ${escapeHtml(decisionText)}.</p>
+        <p><strong>Reference ID:</strong> ${escapeHtml(applicationId)}</p>
+        ${noteHtml}
+        ${siteLink}
+        <p>NHMUN'26 Team</p>
+      </div>
+    `,
+    subject: `NHMUN'26 application update - ${decisionText}`,
+    text: [
+      `Dear ${fullName},`,
+      '',
+      `Your ${role} application has been ${decisionText}.`,
+      `Reference ID: ${applicationId}`,
+      ...notePlain,
+      ...(siteUrl ? ['', `Conference site: ${siteUrl}`] : []),
+      '',
+      "NHMUN'26 Team",
+    ].join('\n'),
+  }
+}
+
+export async function sendDecisionEmail(
+  options: SendDecisionEmailOptions,
+): Promise<EmailResult> {
+  if (shouldSkipEmail(options.env)) {
+    return {
+      ok: true,
+      skipped: true,
+    }
+  }
+
+  try {
+    const decision = buildDecisionEmail(options)
+    const applicantEmailId = await sendResendEmail({
+      env: options.env,
+      html: decision.html,
+      idempotencyKey: `${options.applicationId}:decision:${options.status}`,
+      subject: decision.subject,
+      text: decision.text,
+      to: getString(options.values, 'email'),
+    })
+
+    return {
+      applicantEmailId,
       ok: true,
     }
   } catch (error) {

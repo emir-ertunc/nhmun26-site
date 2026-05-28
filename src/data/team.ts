@@ -38,16 +38,16 @@ export const teamMembers = [
   {
     bio: 'Organizes the delegate experience across registration and conference days.',
     department: 'Organization',
-    id: 'organization-coordinator',
+    id: 'head-of-organization',
     name: 'To be announced',
-    role: 'Organization Coordinator',
+    role: 'Head of Organization',
   },
   {
     bio: 'Builds the public voice of the conference through media and coverage.',
     department: 'Press',
-    id: 'head-of-press',
+    id: 'head-of-media',
     name: 'To be announced',
-    role: 'Head of Press',
+    role: 'Head of Media',
   },
 ] as const satisfies readonly TeamMember[]
 

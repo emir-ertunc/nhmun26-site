@@ -445,6 +445,17 @@ function CommitteeDetail({ committee }: { committee: Committee }) {
           <p className="mt-2 font-semibold text-ink/78">{committee.language}</p>
         </div>
       </div>
+
+      {committee.studyGuideUrl && (
+        <ButtonLink
+          className="w-fit"
+          href={committee.studyGuideUrl}
+          rel="noreferrer"
+          target="_blank"
+        >
+          Study Guide
+        </ButtonLink>
+      )}
     </div>
   )
 }
@@ -681,6 +692,9 @@ function App() {
               target="_blank"
             >
               Instagram
+            </ButtonLink>
+            <ButtonLink href={`mailto:${conference.contactEmail}`}>
+              Email
             </ButtonLink>
             <ButtonLink href="#home" variant="secondary">
               Back to Top
