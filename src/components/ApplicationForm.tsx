@@ -69,6 +69,10 @@ function getConditionalChairboardRequiredFields(values: FormValues) {
     'who',
     'women',
     'specpol',
+    'french',
+    'fransiz',
+    'parliament',
+    'meclisi',
   ])
   const hasCrisisCommittee = includesAny(preferences, [
     'mkk',
@@ -84,7 +88,6 @@ function getConditionalChairboardRequiredFields(values: FormValues) {
     'who',
     'women',
     'specpol',
-    'tbmm',
     'special ga',
     'general assembly',
   ])

@@ -7,7 +7,6 @@ import {
   Gauge,
   Landmark,
   Languages,
-  Megaphone,
   MapPin,
   Menu,
   PenLine,
@@ -48,12 +47,6 @@ const navigationSectionIds = navigationItems.map((item) => item.id)
 
 const aboutHighlightIcons = [Clock3, BookOpen, MapPin, Landmark] as const
 const aboutPillarIcons = [ScrollText, Compass, UsersRound] as const
-const teamDepartmentIcons = {
-  Academic: BookOpen,
-  Organization: ShieldCheck,
-  Press: Megaphone,
-  Secretariat: Landmark,
-} as const
 const teamSummaryIcons = [Landmark, BookOpen, ShieldCheck, PenLine] as const
 
 function getCountdownParts(targetDate: Date) {
@@ -582,31 +575,80 @@ function CommitteesSection() {
   )
 }
 
-function TeamMemberCard({ member }: { member: (typeof teamMembers)[number] }) {
-  const Icon = teamDepartmentIcons[member.department]
-
+function TeamMemberCard({
+  member,
+  onSelect,
+}: {
+  member: (typeof teamMembers)[number]
+  onSelect: () => void
+}) {
   return (
-    <ParchmentCard className="flex h-full flex-col">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-burgundy text-cream">
-          <Icon aria-hidden size={22} />
+    <button
+      aria-label={`Open ${member.role} details`}
+      className="group h-full min-w-0 rounded-lg text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-burgundy"
+      onClick={onSelect}
+      type="button"
+    >
+      <ParchmentCard className="flex h-full min-w-0 flex-col overflow-hidden p-0 transition duration-200 group-hover:-translate-y-1 group-hover:bg-cream">
+        <picture>
+          <source srcSet={member.imageAvif} type="image/avif" />
+          <img
+            alt={member.imageAlt}
+            className="aspect-[4/5] w-full object-cover"
+            loading="lazy"
+            src={member.imageWebp}
+          />
+        </picture>
+        <div className="flex flex-1 flex-col p-5">
+          <span className="w-fit rounded-full border border-burgundy/20 px-3 py-1 text-xs font-bold text-burgundy">
+            {member.department}
+          </span>
+          <h3 className="mt-4 break-words font-serif text-3xl font-bold leading-tight text-burgundy-dark">
+            {member.role}
+          </h3>
+          <p className="mt-2 text-sm font-extrabold uppercase tracking-[0.18em] text-burgundy">
+            {member.name}
+          </p>
         </div>
-        <span className="rounded-full border border-burgundy/20 px-3 py-1 text-xs font-bold text-burgundy">
+      </ParchmentCard>
+    </button>
+  )
+}
+
+function TeamMemberDetail({
+  member,
+}: {
+  member: (typeof teamMembers)[number]
+}) {
+  return (
+    <div className="grid gap-6 md:grid-cols-[0.72fr_1fr]">
+      <picture>
+        <source srcSet={member.imageAvif} type="image/avif" />
+        <img
+          alt={member.imageAlt}
+          className="w-full rounded-lg border border-burgundy/15 object-cover shadow-parchment"
+          src={member.imageWebp}
+        />
+      </picture>
+      <div>
+        <p className="text-sm font-extrabold uppercase tracking-[0.22em] text-burgundy">
           {member.department}
-        </span>
+        </p>
+        <h3 className="mt-3 font-serif text-4xl font-bold leading-tight text-burgundy-dark">
+          {member.name}
+        </h3>
+        <p className="mt-2 text-lg font-bold text-burgundy">{member.role}</p>
+        <p className="mt-5 leading-8 text-ink/74">{member.bio}</p>
       </div>
-      <h3 className="mt-6 font-serif text-3xl font-bold leading-tight text-burgundy-dark">
-        {member.role}
-      </h3>
-      <p className="mt-2 text-sm font-extrabold uppercase tracking-[0.18em] text-burgundy">
-        {member.name}
-      </p>
-      <p className="mt-5 leading-7 text-ink/72">{member.bio}</p>
-    </ParchmentCard>
+    </div>
   )
 }
 
 function TeamSection() {
+  const [selectedMember, setSelectedMember] = useState<
+    (typeof teamMembers)[number] | null
+  >(null)
+
   return (
     <Section background={nhmunImages.team} id="team">
       <div className="grid items-start gap-12 lg:grid-cols-[0.9fr_1.1fr]">
@@ -652,10 +694,21 @@ function TeamSection() {
 
         <div className="grid gap-5 sm:grid-cols-2">
           {teamMembers.map((member) => (
-            <TeamMemberCard key={member.id} member={member} />
+            <TeamMemberCard
+              key={member.id}
+              member={member}
+              onSelect={() => setSelectedMember(member)}
+            />
           ))}
         </div>
       </div>
+      <Modal
+        isOpen={Boolean(selectedMember)}
+        onClose={() => setSelectedMember(null)}
+        title={selectedMember?.role ?? ''}
+      >
+        {selectedMember && <TeamMemberDetail member={selectedMember} />}
+      </Modal>
     </Section>
   )
 }

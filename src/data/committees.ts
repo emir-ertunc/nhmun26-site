@@ -109,17 +109,17 @@ export const committees = [
     shortName: 'SPECPOL',
   },
   {
-    agenda: '16th Term of the TBMM (1977-1980)',
+    agenda: 'To be announced',
     capacity: '70 Delegates',
     category: 'Specialized',
     chairs: ['To be announced'],
     description:
-      'Shedding light on one of the most turbulent and politically polarized eras in Turkish history, the fate of the parliament rests entirely in the hands of the delegates. Participants will take the parliamentary floor to resolve the ongoing national crisis and curb political violence on the road leading up to the 1980 coup.',
+      'The French Parliament (Parlement français) is the bicameral legislative body of France. It consists of the Senate (Sénat), which has 348 members, and the National Assembly (Assemblée nationale), which has 577 members. The Senate meets at the Palais du Luxembourg, while the National Assembly meets at the Palais Bourbon.',
     difficulty: 'Advanced',
-    id: 'tbmm',
+    id: 'french-parliament',
     language: 'English',
-    name: 'TBMM',
-    shortName: 'TBMM',
+    name: 'Fransız Meclisi',
+    shortName: 'Fransız Meclisi',
   },
   {
     agenda: 'To be announced',
