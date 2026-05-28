@@ -116,6 +116,22 @@ The admin panel exposes CSV export at `/api/admin/export.csv`. It uses the same
 Cloudflare Access protection and supports the same search, role, and status
 filters as the admin application list.
 
+## Pre-Deploy Open Items
+
+Track these before the final production release:
+
+- `wrangler.toml` still contains the placeholder
+  `database_id = "replace-after-d1-create"`. Create the production D1 database
+  and replace this value with the real `database_id` before deploying to
+  production.
+- `public/robots.txt` and `public/sitemap.xml` currently use the temporary
+  `https://nhmun26-site.pages.dev/` URL. This is acceptable before the final
+  domain is attached. After the final domain is active, update both files and
+  set `PUBLIC_SITE_URL` to the final domain.
+- The admin search input should not reference removed form fields. Before
+  launch, confirm the admin search placeholder does not mention `city`; use copy
+  such as `Search name, email, school, grade`.
+
 ## Release Checklist
 
 ### Before Buying The Domain
@@ -127,10 +143,11 @@ filters as the admin application list.
 5. Apply D1 migrations with `npx wrangler d1 migrations apply nhmun26-applications --remote`
 6. Create the Turnstile widget
 7. Create the Cloudflare Access application for `/admin` and `/api/admin/*`
-8. Create the Resend account and API key
-9. Set all Cloudflare Pages environment variables that do not depend on the final sender domain
-10. Deploy `main`
-11. Open `/api/health` and confirm only domain-dependent email sender values are missing
+8. Confirm admin panel copy does not reference removed form fields such as `city`
+9. Create the Resend account and API key
+10. Set all Cloudflare Pages environment variables that do not depend on the final sender domain
+11. Deploy `main`
+12. Open `/api/health` and confirm only domain-dependent email sender values are missing
 
 ### After Buying The Domain
 
