@@ -316,7 +316,7 @@ export function AdminApp() {
                 <input
                   className="w-full rounded-lg border border-burgundy/20 bg-cream/82 py-3 pl-10 pr-4 font-semibold text-ink outline-none focus:border-burgundy focus:ring-2 focus:ring-burgundy/20"
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search name, email, school, city"
+                  placeholder="Search name, email, school, grade"
                   value={query}
                 />
               </label>

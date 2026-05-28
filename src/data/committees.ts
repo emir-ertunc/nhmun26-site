@@ -53,7 +53,7 @@ export const committees = [
     difficulty: 'Beginner',
     id: 'unep',
     language: 'English',
-    name: 'United Nations Environment Programme',
+    name: 'UNEP',
     shortName: 'UNEP',
   },
   {
@@ -66,7 +66,7 @@ export const committees = [
     difficulty: 'Intermediate',
     id: 'interpol',
     language: 'English',
-    name: 'International Criminal Police Organization',
+    name: 'INTERPOL',
     shortName: 'INTERPOL',
   },
   {
@@ -79,7 +79,7 @@ export const committees = [
     difficulty: 'Beginner',
     id: 'who',
     language: 'English',
-    name: 'World Health Organization',
+    name: 'WHO',
     shortName: 'WHO',
   },
   {
@@ -92,7 +92,7 @@ export const committees = [
     difficulty: 'Beginner',
     id: 'un-women',
     language: 'English',
-    name: 'United Nations Entity for Gender Equality and the Empowerment of Women',
+    name: 'UN WOMEN',
     shortName: 'UN WOMEN',
   },
   {
@@ -105,7 +105,7 @@ export const committees = [
     difficulty: 'Intermediate',
     id: 'specpol',
     language: 'English',
-    name: 'Special Political and Decolonization Committee',
+    name: 'SPECPOL (Special Political and Decolonization Committee)',
     shortName: 'SPECPOL',
   },
   {
@@ -118,7 +118,7 @@ export const committees = [
     difficulty: 'Advanced',
     id: 'tbmm',
     language: 'English',
-    name: 'Turkish Grand National Assembly',
+    name: 'TBMM',
     shortName: 'TBMM',
   },
   {
