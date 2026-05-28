@@ -29,20 +29,44 @@ const validRoles = new Set([
   'Press',
 ])
 
-function getLimit(value: string | null) {
-  const limit = Number(value ?? 50)
-  if (!Number.isFinite(limit)) {
-    return 50
-  }
-  return Math.min(Math.max(Math.floor(limit), 1), 100)
+const csvHeaders = [
+  'id',
+  'created_at',
+  'updated_at',
+  'role',
+  'full_name',
+  'email',
+  'phone',
+  'school',
+  'grade',
+  'date_of_birth',
+  'gender',
+  'experience',
+  'status',
+  'review_score',
+  'reviewer_notes',
+  'payload_json',
+]
+
+function csvEscape(value: unknown) {
+  const stringValue = value === null || value === undefined ? '' : String(value)
+  return `"${stringValue.replace(/"/g, '""')}"`
 }
 
-function getOffset(value: string | null) {
-  const offset = Number(value ?? 0)
-  if (!Number.isFinite(offset)) {
-    return 0
+function getPayloadValue(payloadJson: unknown, key: string) {
+  if (typeof payloadJson !== 'string') {
+    return ''
   }
-  return Math.max(Math.floor(offset), 0)
+
+  try {
+    const parsed = JSON.parse(payloadJson) as {
+      values?: Record<string, unknown>
+    }
+    const value = parsed.values?.[key]
+    return typeof value === 'string' ? value : ''
+  } catch {
+    return ''
+  }
 }
 
 export async function onRequestGet({ env, request }: PagesFunctionContext) {
@@ -63,8 +87,6 @@ export async function onRequestGet({ env, request }: PagesFunctionContext) {
   const status = url.searchParams.get('status')
   const role = url.searchParams.get('role')
   const query = url.searchParams.get('q')?.trim()
-  const limit = getLimit(url.searchParams.get('limit'))
-  const offset = getOffset(url.searchParams.get('offset'))
   const whereParts: string[] = []
   const values: D1Value[] = []
 
@@ -96,29 +118,53 @@ export async function onRequestGet({ env, request }: PagesFunctionContext) {
       role,
       full_name,
       email,
+      phone,
       school,
       grade,
-      city,
+      experience,
       status,
-      review_score
+      review_score,
+      reviewer_notes,
+      payload_json
     FROM applications
     ${whereClause}
-    ORDER BY created_at DESC
-    LIMIT ? OFFSET ?`,
-  )
-    .bind(...values, limit, offset)
-    .all()
-  const total = await env.DB.prepare(
-    `SELECT COUNT(*) as count FROM applications ${whereClause}`,
+    ORDER BY created_at DESC`,
   )
     .bind(...values)
-    .first<{ count: number }>()
+    .all<Record<string, unknown>>()
 
-  return jsonResponse({
-    applications: rows.results ?? [],
-    limit,
-    offset,
-    ok: true,
-    total: total?.count ?? 0,
+  const csvRows = [
+    csvHeaders.map(csvEscape).join(','),
+    ...(rows.results ?? []).map((row) =>
+      [
+        row.id,
+        row.created_at,
+        row.updated_at,
+        row.role,
+        row.full_name,
+        row.email,
+        row.phone,
+        row.school,
+        row.grade,
+        getPayloadValue(row.payload_json, 'dateOfBirth'),
+        getPayloadValue(row.payload_json, 'gender'),
+        row.experience,
+        row.status,
+        row.review_score,
+        row.reviewer_notes,
+        row.payload_json,
+      ]
+        .map(csvEscape)
+        .join(','),
+    ),
+  ]
+
+  return new Response(`${csvRows.join('\n')}\n`, {
+    headers: {
+      'cache-control': 'no-store',
+      'content-disposition': 'attachment; filename="nhmun26-applications.csv"',
+      'content-type': 'text/csv; charset=utf-8',
+    },
+    status: 200,
   })
 }

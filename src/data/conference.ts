@@ -3,6 +3,7 @@ export const conference = {
   date: '10-11-12 July 2026',
   startsAt: '2026-07-10T00:00:00+03:00',
   location: 'Barbaros Hayrettin Middle School / Izmir Konak',
+  contactEmail: 'nhmun2026@gmail.com',
   instagramUrl: 'https://www.instagram.com/nhmun26/',
   tagline: 'Where heritage meets diplomacy.',
 } as const
