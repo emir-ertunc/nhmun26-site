@@ -469,36 +469,44 @@ function CommitteeCard({
 }) {
   return (
     <button
-      className="group h-full rounded-lg text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-burgundy"
+      className="group h-full min-w-0 rounded-lg text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-burgundy"
       onClick={() => onSelect(committee)}
       type="button"
     >
-      <ParchmentCard className="flex h-full flex-col transition duration-200 group-hover:-translate-y-1 group-hover:bg-cream">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-burgundy">
+      <ParchmentCard className="flex h-full min-w-0 flex-col transition duration-200 group-hover:-translate-y-1 group-hover:bg-cream">
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-3 gap-y-2">
+          <div className="min-w-0 flex-1">
+            <p className="break-words text-xs font-extrabold uppercase tracking-[0.22em] text-burgundy">
               {committee.category}
             </p>
-            <h3 className="mt-3 font-serif text-3xl font-bold leading-tight text-burgundy-dark">
+            <h3 className="mt-3 break-words font-serif text-3xl font-bold leading-tight text-burgundy-dark">
               {committee.shortName}
             </h3>
           </div>
-          <span className="rounded-full border border-burgundy/20 px-3 py-1 text-xs font-bold text-burgundy">
+          <span className="shrink-0 whitespace-nowrap rounded-full border border-burgundy/20 px-2.5 py-1 text-xs font-bold text-burgundy">
             {committee.difficulty}
           </span>
         </div>
 
-        <p className="mt-5 line-clamp-4 leading-7 text-ink/72">
+        <p className="mt-5 line-clamp-4 break-words leading-7 text-ink/72">
           {committee.agenda}
         </p>
 
         <div className="mt-auto grid gap-3 pt-7 text-sm font-semibold text-ink/70">
-          <span className="flex items-center gap-2">
-            <UsersRound aria-hidden className="text-burgundy" size={18} />
+          <span className="flex min-w-0 items-center gap-2">
+            <UsersRound
+              aria-hidden
+              className="shrink-0 text-burgundy"
+              size={18}
+            />
             {committee.capacity}
           </span>
-          <span className="flex items-center gap-2">
-            <Languages aria-hidden className="text-burgundy" size={18} />
+          <span className="flex min-w-0 items-center gap-2">
+            <Languages
+              aria-hidden
+              className="shrink-0 text-burgundy"
+              size={18}
+            />
             {committee.language}
           </span>
         </div>
