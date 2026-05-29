@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   ClipboardList,
+  Download,
   RefreshCw,
   Save,
   Search,
@@ -20,7 +21,47 @@ import {
 import { cn } from './lib/cn'
 
 const statuses = ['new', 'reviewing', 'accepted', 'waitlisted', 'rejected']
-const roles = ['Delegate', 'Delegation', 'Chair', 'Press', 'Organization Team']
+const roles = ['Admin', 'Press', 'Delegation', 'Delegate', 'Chairboard']
+const hiddenPayloadKeys = new Set([
+  'consentContact',
+  'consentTerms',
+  'email',
+  'fullName',
+  'gender',
+  'grade',
+  'phone',
+  'role',
+  'school',
+  'dateOfBirth',
+])
+const payloadLabels: Record<string, string> = {
+  additionalEquipment: 'Additional Equipment',
+  additionalInfo: 'Additional Information',
+  adminReadiness: 'Admin Readiness',
+  backlightScenario: 'Backlight Photography Scenario',
+  cameraModel: 'Camera Brand & Model',
+  chairboardMotivation: 'Motivation Letter',
+  dateOfBirth: 'Date of Birth',
+  delegateDisagreementScenario: 'Delegate Disagreement Scenario',
+  delegationMemberCount: 'Delegation / MUN Club Members',
+  delegationRole: 'Delegation Role',
+  directiveProcedure: 'Directive Procedure',
+  experienceList: 'Experience List',
+  gaProcedure: 'General Assembly Procedure',
+  gender: 'Gender',
+  lolKnowledge: 'LoL Universe Knowledge',
+  montcalmDirective: 'Montcalm Directive',
+  motivationLetter: 'Motivation Letter',
+  photographyInterest: 'Photography Interest',
+  preferredCommittees: 'Committee Preference(s)',
+  pressReadiness: 'Press Readiness',
+  previousMunExperiences: 'Previous MUN Experiences',
+  references: 'Reference(s)',
+  rudeInteractionScenario: 'Rude Interaction Scenario',
+  specialGaSeries: 'Special GA Series Knowledge',
+  supportDelegateScenario: 'Delegate Support Scenario',
+  teammateScenario: 'Teammate Scenario',
+}
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('en', {
@@ -38,11 +79,34 @@ function getPayloadEntries(application: AdminApplicationDetail | null) {
     const parsed = JSON.parse(application.payload_json) as {
       values?: Record<string, unknown>
     }
-    return Object.entries(parsed.values ?? {}).filter(
-      ([key]) => !['consentContact', 'consentTerms', 'role'].includes(key),
-    )
+    return Object.entries(parsed.values ?? {})
+      .filter(([key]) => !hiddenPayloadKeys.has(key))
+      .map(([key, value]) => ({
+        key,
+        label: payloadLabels[key] ?? key,
+        value,
+      }))
   } catch {
     return []
+  }
+}
+
+function getPayloadValue(
+  application: AdminApplicationDetail | null,
+  key: string,
+) {
+  if (!application) {
+    return 'Not provided'
+  }
+
+  try {
+    const parsed = JSON.parse(application.payload_json) as {
+      values?: Record<string, unknown>
+    }
+    const value = parsed.values?.[key]
+    return typeof value === 'string' && value.trim() ? value : 'Not provided'
+  } catch {
+    return 'Not provided'
   }
 }
 
@@ -140,6 +204,21 @@ export function AdminApp() {
     () => getPayloadEntries(selectedApplication),
     [selectedApplication],
   )
+  const exportUrl = useMemo(() => {
+    const params = new URLSearchParams()
+    if (query) {
+      params.set('q', query)
+    }
+    if (role !== 'all') {
+      params.set('role', role)
+    }
+    if (status !== 'all') {
+      params.set('status', status)
+    }
+
+    const queryString = params.toString()
+    return `/api/admin/export.csv${queryString ? `?${queryString}` : ''}`
+  }, [query, role, status])
 
   const loadApplications = async () => {
     setIsLoading(true)
@@ -237,7 +316,7 @@ export function AdminApp() {
                 <input
                   className="w-full rounded-lg border border-burgundy/20 bg-cream/82 py-3 pl-10 pr-4 font-semibold text-ink outline-none focus:border-burgundy focus:ring-2 focus:ring-burgundy/20"
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search name, email, school, city"
+                  placeholder="Search name, email, school, grade"
                   value={query}
                 />
               </label>
@@ -271,6 +350,15 @@ export function AdminApp() {
                 <RefreshCw aria-hidden className="mr-2" size={18} />
                 Refresh
               </Button>
+              <ButtonLink
+                href={exportUrl}
+                rel="noreferrer"
+                target="_blank"
+                variant="secondary"
+              >
+                <Download aria-hidden className="mr-2" size={18} />
+                Export CSV
+              </ButtonLink>
             </div>
             {error && (
               <p className="mt-4 rounded-lg border border-burgundy/20 bg-burgundy/8 px-4 py-3 text-sm font-semibold text-burgundy">
@@ -313,7 +401,7 @@ export function AdminApp() {
                     <div className="mt-4 grid gap-2 text-sm font-semibold text-ink/70 sm:grid-cols-2">
                       <span>{application.role}</span>
                       <span>{application.school}</span>
-                      <span>{application.city}</span>
+                      <span>Grade {application.grade}</span>
                       <span>{formatDate(application.created_at)}</span>
                     </div>
                   </ParchmentCard>
@@ -347,7 +435,11 @@ export function AdminApp() {
                   ['Phone', selectedApplication.phone],
                   ['School', selectedApplication.school],
                   ['Grade', selectedApplication.grade],
-                  ['City', selectedApplication.city],
+                  [
+                    'Date of Birth',
+                    getPayloadValue(selectedApplication, 'dateOfBirth'),
+                  ],
+                  ['Gender', getPayloadValue(selectedApplication, 'gender')],
                   ['Submitted', formatDate(selectedApplication.created_at)],
                 ].map(([label, value]) => (
                   <div
@@ -363,16 +455,16 @@ export function AdminApp() {
               </div>
 
               <div className="mt-6 grid gap-3">
-                {payloadEntries.map(([key, value]) => (
+                {payloadEntries.map((entry) => (
                   <div
                     className="rounded-lg border border-burgundy/15 bg-cream/62 p-4"
-                    key={key}
+                    key={entry.key}
                   >
                     <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-burgundy">
-                      {key}
+                      {entry.label}
                     </p>
                     <p className="mt-1 whitespace-pre-line leading-6 text-ink/78">
-                      {String(value)}
+                      {String(entry.value)}
                     </p>
                   </div>
                 ))}

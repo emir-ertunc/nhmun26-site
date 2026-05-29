@@ -64,7 +64,8 @@ manage the required DNS records once the custom domain is added.
 
 After the final domain is attached, update `index.html` metadata if a fully
 qualified canonical URL or social image URL is preferred over the relative URLs
-that ship with the app.
+that ship with the app. Also update `public/sitemap.xml` and `public/robots.txt`
+from the temporary `https://nhmun26-site.pages.dev/` URL to the final domain.
 
 ## Security Headers
 
@@ -97,8 +98,10 @@ header if that email is also present in `ADMIN_EMAIL_ALLOWLIST`.
 ## Email Delivery
 
 Phase 11 sends application confirmation emails with Resend after a successful D1
-write. Email delivery failures do not reject the application; they are recorded
-in `audit_logs` for follow-up.
+write. Admin status updates to `accepted`, `waitlisted`, or `rejected` send
+decision emails to applicants. Email delivery failures do not reject the
+application or block review updates; they are recorded in `audit_logs` for
+follow-up.
 
 - `RESEND_API_KEY`: private Resend API key.
 - `EMAIL_FROM`: verified sender address, optionally with a display name.
@@ -106,6 +109,27 @@ in `audit_logs` for follow-up.
 - `EMAIL_REPLY_TO`: optional reply-to address for applicant replies.
 
 The sender domain must be verified in Resend before production sends.
+
+## Admin Exports
+
+The admin panel exposes CSV export at `/api/admin/export.csv`. It uses the same
+Cloudflare Access protection and supports the same search, role, and status
+filters as the admin application list.
+
+## Pre-Deploy Open Items
+
+Track these before the final production release:
+
+- `wrangler.toml` still contains the placeholder
+  `database_id = "replace-after-d1-create"`. Create the production D1 database
+  and replace this value with the real `database_id` before deploying to
+  production.
+- `public/robots.txt` and `public/sitemap.xml` currently use the temporary
+  `https://nhmun26-site.pages.dev/` URL. This is acceptable before the final
+  domain is attached. After the final domain is active, update both files and
+  set `PUBLIC_SITE_URL` to the final domain.
+- The admin search input should not reference removed form fields. Confirm it
+  uses current application fields such as name, email, school, and grade.
 
 ## Release Checklist
 
@@ -118,20 +142,24 @@ The sender domain must be verified in Resend before production sends.
 5. Apply D1 migrations with `npx wrangler d1 migrations apply nhmun26-applications --remote`
 6. Create the Turnstile widget
 7. Create the Cloudflare Access application for `/admin` and `/api/admin/*`
-8. Create the Resend account and API key
-9. Set all Cloudflare Pages environment variables that do not depend on the final sender domain
-10. Deploy `main`
-11. Open `/api/health` and confirm only domain-dependent email sender values are missing
+8. Confirm admin panel copy references current application fields only
+9. Create the Resend account and API key
+10. Set all Cloudflare Pages environment variables that do not depend on the final sender domain
+11. Deploy `main`
+12. Open `/api/health` and confirm only domain-dependent email sender values are missing
 
 ### After Buying The Domain
 
 1. Attach the domain to Cloudflare Pages
 2. Set `PUBLIC_SITE_URL` to the final domain
-3. Verify the sender domain in Resend
-4. Set `EMAIL_FROM`, `EMAIL_REPLY_TO`, and `EMAIL_NOTIFICATION_TO`
-5. Redeploy `main`
-6. Open `/api/health` and confirm `ok: true`
-7. Submit one test application
-8. Check D1 for the inserted application row
-9. Confirm the applicant confirmation email arrives
-10. Confirm the application appears in `/admin`
+3. Update `public/sitemap.xml`, `public/robots.txt`, and metadata URLs if needed
+4. Verify the sender domain in Resend
+5. Set `EMAIL_FROM`, `EMAIL_REPLY_TO`, and `EMAIL_NOTIFICATION_TO`
+6. Redeploy `main`
+7. Open `/api/health` and confirm `ok: true`
+8. Submit one test application
+9. Check D1 for the inserted application row
+10. Confirm the applicant confirmation email arrives
+11. Confirm the application appears in `/admin`
+12. Test CSV export from `/admin`
+13. Change a test application status to accepted/waitlisted/rejected and confirm the decision email arrives

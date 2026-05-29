@@ -41,6 +41,174 @@ function isEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
+function formatDateOfBirth(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8)
+  if (digits.length <= 2) {
+    return digits
+  }
+  if (digits.length <= 4) {
+    return `${digits.slice(0, 2)}/${digits.slice(2)}`
+  }
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
+}
+
+function formatPhoneNumber(value: string) {
+  const digits = value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 10)
+  const groups = [
+    digits.slice(0, 3),
+    digits.slice(3, 6),
+    digits.slice(6, 8),
+    digits.slice(8, 10),
+  ].filter(Boolean)
+
+  return groups.join(' ')
+}
+
+function formatFieldValue(fieldId: string, value: string) {
+  if (fieldId === 'dateOfBirth') {
+    return formatDateOfBirth(value)
+  }
+  if (fieldId === 'phone') {
+    return formatPhoneNumber(value)
+  }
+  if (fieldId === 'email') {
+    return value.replace(/\s/g, '').toLowerCase()
+  }
+  return value
+}
+
+function getInputMode(fieldId: string) {
+  if (['dateOfBirth', 'phone'].includes(fieldId)) {
+    return 'numeric' as const
+  }
+  if (fieldId === 'email') {
+    return 'email' as const
+  }
+  return undefined
+}
+
+function getInputMaxLength(fieldId: string) {
+  if (fieldId === 'dateOfBirth') {
+    return 10
+  }
+  if (fieldId === 'phone') {
+    return 13
+  }
+  return undefined
+}
+
+function getInputType(fieldId: string) {
+  if (fieldId === 'email') {
+    return 'email'
+  }
+  if (fieldId === 'phone') {
+    return 'tel'
+  }
+  return 'text'
+}
+
+function isValidDateOfBirth(value: string) {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value)
+  if (!match) {
+    return false
+  }
+
+  const day = Number(match[1])
+  const month = Number(match[2])
+  const year = Number(match[3])
+  const date = new Date(year, month - 1, day)
+  const now = new Date()
+
+  return (
+    year >= 1900 &&
+    date <= now &&
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  )
+}
+
+function isValidPhoneNumber(value: string) {
+  return /^5\d{2} \d{3} \d{2} \d{2}$/.test(value)
+}
+
+function countWords(value: string) {
+  return value.trim().split(/\s+/).filter(Boolean).length
+}
+
+function needsMinimumWords(fieldId: string) {
+  return ['chairboardMotivation', 'motivationLetter'].includes(fieldId)
+}
+
+function normalizePreferenceValue(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9\s]/g, ' ')
+}
+
+function includesAny(value: string, terms: readonly string[]) {
+  const normalizedValue = normalizePreferenceValue(value)
+  return terms.some((term) => normalizedValue.includes(term))
+}
+
+function getConditionalChairboardRequiredFields(values: FormValues) {
+  const preferences = getFieldValue(values, 'preferredCommittees')
+  const hasFcc = includesAny(preferences, ['fcc', 'league of legends', 'lol'])
+  const hasSpecialGa = includesAny(preferences, ['special ga'])
+  const hasGaCommittee = includesAny(preferences, [
+    'ga',
+    'general assembly',
+    'unep',
+    'who',
+    'women',
+    'specpol',
+    'french',
+    'fransiz',
+    'parliament',
+    'meclisi',
+  ])
+  const hasCrisisCommittee = includesAny(preferences, [
+    'mkk',
+    'fcc',
+    'crisis',
+    'seven years',
+    'league of legends',
+    'lol',
+  ])
+  const hasNonCrisisCommittee = includesAny(preferences, [
+    'unep',
+    'interpol',
+    'who',
+    'women',
+    'specpol',
+    'special ga',
+    'general assembly',
+  ])
+  const onlyCrisis = hasCrisisCommittee && !hasNonCrisisCommittee
+  const requiredFields: Record<string, string> = {}
+
+  if (onlyCrisis) {
+    requiredFields.directiveProcedure =
+      'This field is required when you apply only for crisis committees.'
+    requiredFields.montcalmDirective =
+      'This field is required when you apply only for crisis committees.'
+  }
+  if (hasFcc) {
+    requiredFields.lolKnowledge =
+      'This field is required when you apply for FCC.'
+  }
+  if (hasSpecialGa) {
+    requiredFields.specialGaSeries =
+      'This field is required when you apply for Special GA.'
+  }
+  if (hasGaCommittee) {
+    requiredFields.gaProcedure =
+      'This field is required when you apply for General Assembly committees.'
+    requiredFields.supportDelegateScenario =
+      'This field is required when you apply for General Assembly committees.'
+  }
+
+  return requiredFields
+}
+
 function FieldControl({
   error,
   field,
@@ -56,25 +224,37 @@ function FieldControl({
     'mt-2 w-full rounded-lg border bg-cream/82 px-4 py-3 text-base font-semibold text-ink outline-none transition placeholder:text-ink/38 focus:border-burgundy focus:ring-2 focus:ring-burgundy/20',
     error ? 'border-burgundy' : 'border-burgundy/20',
   )
+  const isLongLabel = field.label.length > 80
 
   return (
     <label className="block">
-      <span className="text-sm font-extrabold uppercase tracking-[0.18em] text-burgundy">
+      <span
+        className={cn(
+          'text-sm font-extrabold text-burgundy',
+          isLongLabel ? 'leading-6' : 'uppercase tracking-[0.18em]',
+        )}
+      >
         {field.label}
       </span>
       {field.multiline ? (
         <textarea
           className={cn(inputClassName, 'min-h-32 resize-y leading-7')}
-          onChange={(event) => onChange(field.id, event.target.value)}
+          onChange={(event) =>
+            onChange(field.id, formatFieldValue(field.id, event.target.value))
+          }
           placeholder={field.placeholder}
           value={value}
         />
       ) : (
         <input
           className={inputClassName}
-          onChange={(event) => onChange(field.id, event.target.value)}
+          inputMode={getInputMode(field.id)}
+          maxLength={getInputMaxLength(field.id)}
+          onChange={(event) =>
+            onChange(field.id, formatFieldValue(field.id, event.target.value))
+          }
           placeholder={field.placeholder}
-          type={field.id.toLowerCase().includes('email') ? 'email' : 'text'}
+          type={getInputType(field.id)}
           value={value}
         />
       )}
@@ -98,7 +278,8 @@ export function ApplicationForm() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
 
   const selectedRole = getRole(values)
-  const selectedRoleFields = roleFields[selectedRole]
+  const selectedRoleFields: readonly ApplicationField[] =
+    roleFields[selectedRole]
   const selectedRoleFieldIds = useMemo(
     () => new Set<string>(selectedRoleFields.map((field) => field.id)),
     [selectedRoleFields],
@@ -145,6 +326,17 @@ export function ApplicationForm() {
       if (email && !isEmail(email)) {
         nextErrors.email = 'Enter a valid email address.'
       }
+
+      const dateOfBirth = getFieldValue(values, 'dateOfBirth').trim()
+      if (dateOfBirth && !isValidDateOfBirth(dateOfBirth)) {
+        nextErrors.dateOfBirth = 'Enter date as DD/MM/YYYY.'
+      }
+
+      const phone = getFieldValue(values, 'phone').trim()
+      if (phone && !isValidPhoneNumber(phone)) {
+        nextErrors.phone =
+          'Enter a 10-digit phone number without 0, e.g. 5XX XXX XX XX.'
+      }
     }
 
     if (targetStep === 2) {
@@ -152,12 +344,21 @@ export function ApplicationForm() {
         const value = getFieldValue(values, field.id).trim()
         if (field.required && !value) {
           nextErrors[field.id] = 'This field is required.'
+        } else if (needsMinimumWords(field.id) && countWords(value) < 150) {
+          nextErrors[field.id] = 'Write at least 150 words.'
         }
       }
 
-      const advisorEmail = getFieldValue(values, 'advisorEmail').trim()
-      if (advisorEmail && !isEmail(advisorEmail)) {
-        nextErrors.advisorEmail = 'Enter a valid advisor email address.'
+      if (selectedRole === 'Chairboard') {
+        const conditionalRequiredFields =
+          getConditionalChairboardRequiredFields(values)
+        for (const [fieldId, message] of Object.entries(
+          conditionalRequiredFields,
+        )) {
+          if (!getFieldValue(values, fieldId).trim()) {
+            nextErrors[fieldId] = message
+          }
+        }
       }
     }
 
